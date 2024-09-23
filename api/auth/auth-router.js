@@ -21,24 +21,25 @@ function generateToken(user) {
 
 // POST /api/auth/register
 router.post('/register', async (req, res, next) => {
-  try {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password required' });
+  try {
+    // Check if username exists
+    const userExists = await Users.findBy({ username }).first();
+    if (userExists) {
+      return res.status(400).json({ message: "Username taken" });
     }
 
-    const rounds = process.env.BCRYPT_ROUNDS || 8;
-    const hashedPassword = bcrypt.hashSync(password, parseInt(rounds));
-
-    const newUser = await Users.add({ username, password: hashedPassword });
-
-    res.status(201).json(newUser);
+    // Hash password and store user
+    const hashedPassword = bcrypt.hashSync(password, 8);
+    const newUser = { username, password: hashedPassword };
+    
+    const savedUser = await Users.add(newUser);
+    res.status(201).json(savedUser);
   } catch (err) {
     next(err);
   }
 });
-
 // POST /api/auth/login
 router.post('/login', async (req, res, next) => {
   try {
