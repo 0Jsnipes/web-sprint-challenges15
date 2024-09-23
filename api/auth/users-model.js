@@ -3,12 +3,14 @@ const db = require('../../data/dbConfig'); // Assuming you have a dbConfig for d
 function add(user) {
     return db('users')
       .insert(user)
-      .returning('*') // This will return all columns of the inserted row
+      .returning('*') // This returns all columns of the inserted row
       .then(([newUser]) => {
-        // Convert id to string
+        // Destructure the newUser and convert id to string
+        const { id , username, password } = newUser; // Destructure properties
         return {
-          ...newUser,
-          id: newUser.id.toString(), // Convert ID to string
+          id: id, // Convert id to string
+          username: username,
+          password: password // Optionally, you might want to omit the password in the response
         };
       });
   }
