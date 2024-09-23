@@ -4,7 +4,7 @@ function add(user) {
     return db('users')
       .insert(user)
       .returning('*') // This returns all columns of the inserted row
-      .then(([user]))
+      .then(([newUser])=> newUser)
   }
   
 function findBy(filter) {
