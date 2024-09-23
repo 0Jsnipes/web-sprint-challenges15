@@ -4,12 +4,14 @@ const db = require('../../data/dbConfig'); // Assuming you have a dbConfig for d
 // Adjust based on your database setup
 
 function add(user) {
+    console.log(user)
   return db('users')
     .insert(user) // Insert the user into the database
     .returning('*') // Return all columns of the newly inserted row
     .then(([newUser]) => {
       return {
-        id: newUser, // Ensure id is returned as a string
+        id: newUser,
+        username: user.username, // Ensure id is returned as a string
          // Include the username
         // You can choose not to return the password for security reasons
       };
