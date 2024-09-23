@@ -1,45 +1,69 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const Users = require('./users-model'); // Assuming you have a user model for DB operations
 const router = express.Router();
 
-let users = []; // In-memory user storage for testing
-let idCounter = 1; // Simple ID counter
+// Helper function to create a JWT
+function generateToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+  };
+  const secret = process.env.JWT_SECRET || 'shh'; // Fallback secret
 
-const findBy = (filter) => {
-  return users.find(user => user.username === filter.username);
-};
+  const options = {
+    expiresIn: '1h', // Token expires in 1 hour
+  };
 
-router.post('/register', async (req, res) => {
+  return jwt.sign(payload, secret, options);
+}
+
+// POST /api/auth/register
+router.post('/register', async (req, res, next) => {
   const { username, password } = req.body;
-
-  // Validate input
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password required' });
   }
+  
 
-  const userExists = findBy({ username });
+  try {
+    // Check if username exists
+    const userExists = await Users.findBy({ username }).first();
+    if (userExists) {
+      return res.status(400).json({ message: "Username taken" });
+    }
 
-  if (userExists) {
-    return res.status(400).json({ message: 'Username taken' });
+    // Hash password and store user
+    const hashedPassword = bcrypt.hashSync(password, 8);
+    const newUser = { username, password: hashedPassword };
+    
+    const savedUser = await Users.add(newUser);
+    res.status(201).json(savedUser);
+  } catch (err) {
+    next(err);
   }
-
-  const hashedPassword = bcrypt.hashSync(password, 8);
-  const newUser = { id: idCounter++, username, password: hashedPassword };
-  users.push(newUser); // Store the new user
-  res.status(201).json(newUser); // Return the saved user object
 });
+// POST /api/auth/login
+router.post('/login', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
 
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = findBy({ username });
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password required' });
+    }
 
-  if (user && bcrypt.compareSync(password, user.password)) {
-    // Create a mock token (in a real app, you'd use jwt.sign here)
-    const token = 'mock-token';
-    return res.status(200).json({ message: `Welcome, ${username}`, token });
+    const user = await Users.findBy({ username }).first();
+
+    if (user && bcrypt.compareSync(password, user.password)) {
+      const token = generateToken(user);
+      res.status(200).json({ message: `Welcome, ${user.username}!`, token });
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  } catch (err) {
+    next(err);
   }
-
-  res.status(401).json({ message: 'Invalid credentials' });
 });
 
 module.exports = router;
