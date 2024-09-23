@@ -25,7 +25,6 @@ router.post('/register', async (req, res, next) => {
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password required' });
   }
-  
 
   try {
     // Check if username exists
@@ -39,11 +38,12 @@ router.post('/register', async (req, res, next) => {
     const newUser = { username, password: hashedPassword };
     
     const savedUser = await Users.add(newUser);
-    res.status(201).json(savedUser);
+    res.status(201).json(savedUser); // Ensure this contains `id`
   } catch (err) {
     next(err);
   }
 });
+
 // POST /api/auth/login
 router.post('/login', async (req, res, next) => {
   try {
