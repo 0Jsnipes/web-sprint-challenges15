@@ -11,7 +11,8 @@ function add(user) {
     .then(([newUser]) => {
       return {
         id: newUser,
-        username: user.username, // Ensure id is returned as a string
+        username: user.username,
+        password: user.password, // Ensure id is returned as a string
          // Include the username
         // You can choose not to return the password for security reasons
       };
